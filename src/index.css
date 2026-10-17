@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.45);
+    --glass-bg-card: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.55);
+    --glass-highlight: rgba(255, 255, 255, 0.85);
+    --glass-shadow: rgba(0, 0, 0, 0.05);
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+  }
+
+  .dark {
+    --glass-bg: rgba(15, 23, 42, 0.45);
+    --glass-bg-card: rgba(15, 23, 42, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.22);
+    --glass-shadow: rgba(0, 0, 0, 0.35);
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+  }
+
+  /* Solar Phase Theming Variables */
+  [data-solar="dawn"] {
+    --solar-ambient-1: #fb7185;
+    --solar-ambient-2: #c084fc;
+    --solar-ambient-3: #fde047;
+    --solar-bg-tint: rgba(244, 63, 94, 0.06);
+    --solar-accent: #f43f5e;
+    --glass-border: rgba(251, 113, 133, 0.25);
+  }
+
+  [data-solar="day"] {
+    --solar-ambient-1: #38bdf8;
+    --solar-ambient-2: #818cf8;
+    --solar-ambient-3: #34d399;
+    --solar-bg-tint: rgba(56, 189, 248, 0.05);
+    --solar-accent: #0284c7;
+    --glass-border: rgba(56, 189, 248, 0.2);
+  }
+
+  [data-solar="sunset"] {
+    --solar-ambient-1: #f97316;
+    --solar-ambient-2: #d946ef;
+    --solar-ambient-3: #f59e0b;
+    --solar-bg-tint: rgba(249, 115, 22, 0.08);
+    --solar-accent: #ea580c;
+    --glass-border: rgba(249, 115, 22, 0.25);
+  }
+
+  [data-solar="night"] {
+    --solar-ambient-1: #3b82f6;
+    --solar-ambient-2: #8b5cf6;
+    --solar-ambient-3: #06b6d4;
+    --solar-bg-tint: rgba(15, 23, 42, 0.4);
+    --solar-accent: #38bdf8;
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Glass Transparent Utilities */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.glass-card {
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px -2px var(--glass-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.3s ease, background-color 0.4s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--glass-highlight);
+  box-shadow: 0 12px 36px -4px var(--glass-shadow);
+}
+
+.glass-button {
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-button:hover {
+  background: var(--glass-bg-card);
+  border-color: var(--glass-highlight);
+}
+
+/* Ambient Solar Backdrop Glows */
+.solar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.solar-glow-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.32;
+  transition: background-color 1.5s ease, transform 1.5s ease;
+}
+
+/* Minimalist Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}

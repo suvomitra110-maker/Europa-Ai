@@ -1,0 +1,6 @@
+{
+  "name": "Europa Ai",
+  "description": "Europa Ai - Next-generation personalized AI study platform with 3D voxel focus library, gamified learning paths, progress tracking, and peer collaboration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

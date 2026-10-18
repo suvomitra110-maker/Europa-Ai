@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 
 export const SolarSkyBackground: React.FC = () => {
-  const { sunHour, solarPhase, theme } = useApp();
+  const { sunHour, solarPhase, theme, autoSunSync, activeDesignThemeConfig } = useApp();
 
   // Celestial coordinates calculation based on 24h sun cycle
   // Sunrise at 05:30, Noon at 12:00, Sunset at 18:30, Night 19:00 - 05:00
@@ -19,8 +19,11 @@ export const SolarSkyBackground: React.FC = () => {
   const moonX = 12 + Math.max(0, Math.min(1, moonProgress)) * 76;
   const moonY = 75 - Math.sin(Math.max(0, Math.min(1, moonProgress)) * Math.PI) * 58;
 
-  // Generate dynamic sky gradient based on solarPhase and sunHour
+  // Generate dynamic sky gradient based on active design theme or solarPhase
   const skyGradient = useMemo(() => {
+    if (activeDesignThemeConfig && (!autoSunSync || activeDesignThemeConfig.id !== 'europa-night')) {
+      return activeDesignThemeConfig.skyGradient;
+    }
     switch (solarPhase) {
       case 'dawn':
         return theme === 'light'
@@ -39,10 +42,17 @@ export const SolarSkyBackground: React.FC = () => {
           ? 'linear-gradient(180deg, #312e81 0%, #1e1b4b 45%, #0f172a 100%)'
           : 'linear-gradient(180deg, #050814 0%, #0a0f29 40%, #0b1120 70%, #020408 100%)';
     }
-  }, [solarPhase, theme]);
+  }, [solarPhase, theme, autoSunSync, activeDesignThemeConfig]);
 
   // Ambient aura orb colors
   const ambientOrbs = useMemo(() => {
+    if (activeDesignThemeConfig && (!autoSunSync || activeDesignThemeConfig.id !== 'europa-night')) {
+      return {
+        orb1: activeDesignThemeConfig.orbColors[0],
+        orb2: activeDesignThemeConfig.orbColors[1],
+        orb3: activeDesignThemeConfig.orbColors[2],
+      };
+    }
     switch (solarPhase) {
       case 'dawn':
         return {
@@ -69,13 +79,108 @@ export const SolarSkyBackground: React.FC = () => {
           orb3: 'rgba(6, 182, 212, 0.2)',   // starlight cyan
         };
     }
-  }, [solarPhase]);
+  }, [solarPhase, autoSunSync, activeDesignThemeConfig]);
+
+  const isKolkataDurgaTheme = activeDesignThemeConfig?.category === 'kolkata-durga-puja';
+  const isFuturisticTheme = activeDesignThemeConfig?.category === 'futuristic';
 
   return (
     <div
       className="fixed inset-0 pointer-events-none z-0 overflow-hidden transition-all duration-1000 ease-in-out select-none"
       style={{ background: skyGradient }}
     >
+      {/* Kolkata & Durga Puja Sacred Shardiya Alpona Mandala & Pandal Illumination Backdrop */}
+      {isKolkataDurgaTheme && (
+        <div className="absolute inset-0 pointer-events-none opacity-25 flex items-center justify-center">
+          <svg
+            viewBox="0 0 800 800"
+            className="w-[740px] h-[740px] max-w-none"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="400"
+              cy="400"
+              r="310"
+              stroke={activeDesignThemeConfig.accentSecondary}
+              strokeWidth="1.5"
+              strokeDasharray="8 6"
+            />
+            <circle
+              cx="400"
+              cy="400"
+              r="240"
+              stroke={activeDesignThemeConfig.accentPrimary}
+              strokeWidth="1.5"
+            />
+            <circle
+              cx="400"
+              cy="400"
+              r="165"
+              stroke={activeDesignThemeConfig.accentSecondary}
+              strokeWidth="1.2"
+              strokeDasharray="4 4"
+            />
+            {/* 8-Petal Shardiya Lotus Alpona */}
+            {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
+              <g key={deg} transform={`rotate(${deg} 400 400)`}>
+                <path
+                  d="M400 160 C435 230, 435 310, 400 365 C365 310, 365 230, 400 160 Z"
+                  stroke={activeDesignThemeConfig.accentPrimary}
+                  strokeWidth="1.5"
+                />
+                <circle
+                  cx="400"
+                  cy="135"
+                  r="6"
+                  fill={activeDesignThemeConfig.accentSecondary}
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      {/* Futuristic 3026 Dyson Orbital Ring & Quantum Lattice Backdrop */}
+      {isFuturisticTheme && (
+        <div className="absolute inset-0 pointer-events-none opacity-25 flex items-center justify-center">
+          <svg
+            viewBox="0 0 900 900"
+            className="w-[820px] h-[820px] max-w-none"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <ellipse
+              cx="450"
+              cy="450"
+              rx="380"
+              ry="150"
+              transform="rotate(-24 450 450)"
+              stroke={activeDesignThemeConfig.accentPrimary}
+              strokeWidth="1.5"
+              strokeDasharray="12 6"
+            />
+            <ellipse
+              cx="450"
+              cy="450"
+              rx="380"
+              ry="150"
+              transform="rotate(24 450 450)"
+              stroke={activeDesignThemeConfig.accentSecondary}
+              strokeWidth="1.5"
+              strokeDasharray="6 8"
+            />
+            <circle
+              cx="450"
+              cy="450"
+              r="260"
+              stroke={activeDesignThemeConfig.accentPrimary}
+              strokeWidth="1"
+            />
+          </svg>
+        </div>
+      )}
+
       {/* Dynamic Celestial Sun with Radiant Corona */}
       {isSunUp && (
         <div

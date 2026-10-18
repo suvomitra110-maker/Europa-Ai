@@ -1,17 +1,17 @@
 import React from 'react';
-import { Box, LayoutDashboard, Newspaper, Trophy, FileText, User } from 'lucide-react';
+import { Home, Box, LayoutDashboard, Gamepad2, TrendingUp, User } from 'lucide-react';
 import { useApp, ActiveTab } from '../../context/AppContext';
 
 export const MobileNav: React.FC = () => {
   const { activeTab, setActiveTab, t } = useApp();
 
-  const mobileItems: { id: ActiveTab; labelKey: string; icon: React.ReactNode }[] = [
-    { id: 'library', labelKey: 'library', icon: <Box className="w-5 h-5" /> },
-    { id: 'dashboard', labelKey: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: 'contests', labelKey: 'aiContests', icon: <Trophy className="w-5 h-5 text-amber-400" /> },
-    { id: 'news', labelKey: 'aiNews', icon: <Newspaper className="w-5 h-5" /> },
-    { id: 'summarizer', labelKey: 'aiSummarizer', icon: <FileText className="w-5 h-5" /> },
-    { id: 'profile', labelKey: 'profile', icon: <User className="w-5 h-5" /> },
+  const mobileItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
+    { id: 'library', label: t('library'), icon: <Box className="w-5 h-5" /> },
+    { id: 'dashboard', label: t('dashboard'), icon: <LayoutDashboard className="w-5 h-5" /> },
+    { id: 'quant-trading', label: 'Quant', icon: <TrendingUp className="w-5 h-5 text-emerald-400" /> },
+    { id: 'games', label: 'Games', icon: <Gamepad2 className="w-5 h-5 text-rose-400" /> },
+    { id: 'profile', label: t('profile'), icon: <User className="w-5 h-5" /> },
   ];
 
   return (
@@ -27,7 +27,7 @@ export const MobileNav: React.FC = () => {
             }`}
           >
             {item.icon}
-            <span className="text-[10px] font-medium mt-1 truncate max-w-[56px]">{t(item.labelKey)}</span>
+            <span className="text-[10px] font-medium mt-1 truncate max-w-[56px]">{item.label}</span>
           </button>
         );
       })}

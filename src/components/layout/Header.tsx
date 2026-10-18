@@ -1,270 +1,282 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Flame,
-  Moon,
-  Sun,
-  Sunrise,
-  Sunset,
-  Wifi,
-  WifiOff,
-  User as UserIcon,
-  Globe,
-  Calendar,
   ArrowLeft,
-  Sliders,
-  Check,
+  BarChart3,
+  Box,
+  Briefcase,
+  ChevronDown,
+  FileText,
+  Gamepad2,
+  Home,
+  LayoutDashboard,
+  LayoutGrid,
+  MessageSquare,
+  Newspaper,
+  QrCode,
+  Search,
+  Settings,
+  TrendingUp,
+  Trophy,
+  User,
+  Users,
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
-import { LanguageCode } from '../../types';
+import { useApp, ActiveTab } from '../../context/AppContext';
+import {
+  ALL_WINDOW_MENU_OPTIONS,
+  filterWindowMenuOptions,
+  FUTURISTIC_EARTH_HEADER_DATA_URI,
+} from '../../utils/futuristicEarthAsset';
 
-export const Header: React.FC = () => {
-  const {
-    user,
-    theme,
-    toggleTheme,
-    solarPhase,
-    sunHour,
-    autoSunSync,
-    setSunHour,
-    setAutoSunSync,
-    language,
-    setLanguage,
-    t,
-    isOffline,
-    toggleOfflineMode,
-    setShowAuthModal,
-    activeTab,
-    setActiveTab,
-    goBack,
-    exportStudyCalendarIcs,
-  } = useApp();
+interface HeaderProps {
+  externalMenuOpen?: boolean;
+  onExternalMenuChange?: (open: boolean) => void;
+}
 
-  const [showSolarPopover, setShowSolarPopover] = useState(false);
-  const xpPercent = Math.min(Math.round((user.xp / user.nextLevelXp) * 100), 100);
+export const Header: React.FC<HeaderProps> = ({
+  externalMenuOpen,
+  onExternalMenuChange,
+}) => {
+  const { activeTab, setActiveTab, goBack } = useApp();
+  const [internalMenuOpen, setInternalMenuOpen] = useState(false);
+  const [menuSearch, setMenuSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const formatSunTime = (h: number) => {
-    const hours = Math.floor(h);
-    const minutes = Math.floor((h - hours) * 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  const isMenuOpen = externalMenuOpen !== undefined ? externalMenuOpen : internalMenuOpen;
+  const setMenuOpen = (val: boolean) => {
+    setInternalMenuOpen(val);
+    if (onExternalMenuChange) onExternalMenuChange(val);
   };
 
-  const getSolarIcon = () => {
-    switch (solarPhase) {
-      case 'dawn':
-        return <Sunrise className="w-4 h-4 text-rose-400" />;
-      case 'day':
-        return <Sun className="w-4 h-4 text-amber-400" />;
-      case 'sunset':
-        return <Sunset className="w-4 h-4 text-orange-400" />;
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const getWindowIcon = (id: ActiveTab) => {
+    switch (id) {
+      case 'home':
+        return <Home className="w-4 h-4 text-cyan-400" />;
+      case 'library':
+        return <Box className="w-4 h-4 text-cyan-400" />;
+      case 'dashboard':
+        return <LayoutDashboard className="w-4 h-4 text-sky-400" />;
+      case 'quant-trading':
+        return <TrendingUp className="w-4 h-4 text-emerald-400" />;
+      case 'games':
+        return <Gamepad2 className="w-4 h-4 text-rose-400" />;
+      case 'analytics':
+        return <BarChart3 className="w-4 h-4 text-indigo-400" />;
+      case 'non-technical':
+        return <Briefcase className="w-4 h-4 text-amber-400" />;
+      case 'news':
+        return <Newspaper className="w-4 h-4 text-cyan-400" />;
+      case 'contests':
+        return <Trophy className="w-4 h-4 text-amber-400" />;
+      case 'forum':
+        return <MessageSquare className="w-4 h-4 text-purple-400" />;
+      case 'scan-transfer':
+        return <QrCode className="w-4 h-4 text-teal-400" />;
+      case 'summarizer':
+        return <FileText className="w-4 h-4 text-blue-400" />;
+      case 'collaborative-doc':
+        return <Users className="w-4 h-4 text-pink-400" />;
+      case 'profile':
+        return <User className="w-4 h-4 text-cyan-400" />;
+      case 'settings':
+        return <Settings className="w-4 h-4 text-slate-300" />;
       default:
-        return <Moon className="w-4 h-4 text-indigo-400" />;
+        return <Home className="w-4 h-4 text-cyan-400" />;
     }
   };
 
-  const getSolarLabel = () => {
-    switch (solarPhase) {
-      case 'dawn':
-        return 'Solar Dawn';
-      case 'day':
-        return 'Solar Zenith';
-      case 'sunset':
-        return 'Golden Sunset';
-      default:
-        return 'Midnight Sky';
-    }
-  };
+  const activeWindowOption =
+    ALL_WINDOW_MENU_OPTIONS.find(opt => opt.id === activeTab) || ALL_WINDOW_MENU_OPTIONS[0];
+
+  const filteredOptions = filterWindowMenuOptions(menuSearch);
 
   return (
-    <header className="h-16 border-b border-white/10 dark:border-white/10 glass-panel px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 transition-colors select-none">
-      {/* Brand logo & Universal Back button */}
-      <div className="flex items-center gap-3">
-        {/* Universal Back button on Every Page */}
+    <header className="relative h-16 sm:h-20 border-b border-white/15 bg-slate-950 px-3 sm:px-8 flex items-center justify-between gap-2 sm:gap-6 sticky top-0 z-50 select-none">
+      {/* Futuristic Earth Picture Backdrop in Header */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src={FUTURISTIC_EARTH_HEADER_DATA_URI}
+          alt="Futuristic Earth Orbital Header Backdrop"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover object-center opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/90" />
+      </div>
+
+      {/* Zone 1 (Top-Left): All Windows Dropdown Menu + Clean Brand Wordmark */}
+      <div className="relative z-10 flex items-center gap-2 sm:gap-3 shrink-0" ref={dropdownRef}>
+        {/* Top-Left Dropdown Trigger containing ALL Windows Options */}
         <button
-          onClick={goBack}
-          title="Go Back to Previous Page"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-button text-xs font-bold text-slate-800 dark:text-slate-100 hover:text-cyan-500 dark:hover:text-cyan-400 cursor-pointer shadow-sm transition group"
+          type="button"
+          onClick={() => setMenuOpen(!isMenuOpen)}
+          aria-expanded={isMenuOpen}
+          aria-haspopup="menu"
+          aria-label="Open All Windows Menu"
+          className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/95 text-white border border-cyan-400/40 shadow-lg transition cursor-pointer whitespace-nowrap shrink-0"
         >
-          <ArrowLeft className="w-4 h-4 text-cyan-500 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-semibold">Back</span>
+          <LayoutGrid className="w-4 h-4 text-cyan-400 shrink-0" />
+          <span className="text-xs font-bold tracking-tight">Windows Menu</span>
+          <span aria-hidden="true" className="text-slate-500 hidden sm:inline">
+            ·
+          </span>
+          <span className="text-xs font-medium text-cyan-300 max-w-[140px] truncate hidden sm:inline">
+            {activeWindowOption.title}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 text-cyan-300 transition-transform duration-200 ${
+              isMenuOpen ? 'rotate-180' : ''
+            }`}
+          />
         </button>
 
-        <div
-          onClick={() => setActiveTab('library')}
-          className="flex items-center gap-2.5 cursor-pointer group"
+        {/* Clean Single-Line Brand Wordmark */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('home')}
+          className="text-sm sm:text-lg font-extrabold tracking-tight text-white hover:text-cyan-300 transition cursor-pointer whitespace-nowrap shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-            <span className="font-extrabold text-lg tracking-tighter font-mono">E</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition">
-                Europa Ai
-              </span>
-              <span className="hidden sm:inline-block text-[10px] font-mono uppercase bg-indigo-950/60 text-indigo-300 border border-indigo-700/40 px-2 py-0.5 rounded-full font-semibold">
-                v2.4
-              </span>
+          Europa Ai
+        </button>
+
+        {activeTab !== 'home' && (
+          <button
+            type="button"
+            onClick={goBack}
+            title="Go Back"
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-semibold text-slate-200 transition cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Back</span>
+          </button>
+        )}
+
+        {/* Top-Left Dropdown Panel: Keeps ALL 15 Windows Options in Menu */}
+        {isMenuOpen && (
+          <div
+            role="menu"
+            aria-label="All Windows Navigation Menu"
+            className="absolute left-0 top-full mt-2.5 w-[92vw] max-w-[760px] rounded-2xl bg-slate-950/98 border border-cyan-500/35 shadow-2xl p-4 sm:p-5 text-slate-100 z-50 backdrop-blur-2xl"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-3.5 border-b border-white/10">
+              <div>
+                <h2 className="text-sm font-bold text-white tracking-tight">
+                  All Windows & Workspaces ({ALL_WINDOW_MENU_OPTIONS.length})
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Select any window option below to switch workspaces immediately
+                </p>
+              </div>
+
+              {/* Instant Filter Input inside Dropdown */}
+              <div className="relative w-full sm:w-60">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={menuSearch}
+                  onChange={e => setMenuSearch(e.target.value)}
+                  placeholder="Filter windows..."
+                  aria-label="Filter windows in menu"
+                  className="w-full bg-slate-900 border border-white/15 rounded-xl py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
             </div>
+
+            {/* Grid of All 15 Windows Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[70vh] overflow-y-auto pr-1">
+              {filteredOptions.map(option => {
+                const isSelected = activeTab === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setActiveTab(option.id);
+                      setMenuOpen(false);
+                      setMenuSearch('');
+                    }}
+                    className={`w-full text-left p-2.5 rounded-xl border transition flex items-start gap-2.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-sm'
+                        : 'bg-slate-900/75 hover:bg-slate-800/90 border-white/10 text-slate-200'
+                    }`}
+                  >
+                    <div className="p-2 rounded-lg bg-slate-950/90 border border-white/10 shrink-0 mt-0.5">
+                      {getWindowIcon(option.id)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-white truncate">{option.title}</div>
+                      <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {option.subtitle}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Zone 2 (Center): Framed Futuristic Earth Picture in Header */}
+      <div
+        onClick={() => setActiveTab('home')}
+        className="relative z-10 hidden md:flex items-center gap-3.5 px-3 py-1.5 rounded-2xl bg-slate-950/75 border border-cyan-400/30 cursor-pointer hover:border-cyan-300/60 transition group"
+      >
+        <div className="w-24 h-11 rounded-xl overflow-hidden border border-cyan-400/40 shrink-0 bg-slate-950">
+          <img
+            src={FUTURISTIC_EARTH_HEADER_DATA_URI}
+            alt="Futuristic Earth in Header"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+        <div className="pr-1">
+          <div className="text-xs font-bold text-white tracking-tight whitespace-nowrap">
+            Futuristic Earth · Orbital Sanctuary
+          </div>
+          <div className="text-[11px] text-cyan-300 font-medium whitespace-nowrap">
+            Planetary Horizon 3026 · Home View
           </div>
         </div>
       </div>
 
-      {/* Center status items: Sun Position Theme Widget, Streak, Offline Indicator */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Dynamic Sun Position Widget (Changes theme based on Sun) */}
-        <div className="relative">
+      {/* Zone 3 (Right): Single Clean Primary Action */}
+      <div className="relative z-10 flex items-center gap-2 shrink-0">
+        {activeTab !== 'home' ? (
           <button
-            onClick={() => setShowSolarPopover(!showSolarPopover)}
-            title="Sun Position & Dynamic Solar Lighting Engine"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-button text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer shadow-sm hover:border-cyan-500/50 transition"
+            type="button"
+            onClick={() => setActiveTab('home')}
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
           >
-            {getSolarIcon()}
-            <span className="hidden md:inline font-mono text-[11px] font-bold">{formatSunTime(sunHour)}</span>
-            <span className="hidden lg:inline text-[11px] opacity-80 capitalize">({getSolarLabel()})</span>
-          </button>
-
-          {/* Sun Control Popover */}
-          {showSolarPopover && (
-            <div className="absolute right-0 top-12 w-72 glass-card p-4 rounded-2xl shadow-2xl z-50 text-slate-800 dark:text-slate-100 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  {getSolarIcon()}
-                  <div>
-                    <h4 className="text-xs font-bold">{getSolarLabel()}</h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Sun Position Theme Controller</p>
-                  </div>
-                </div>
-                <span className="text-xs font-mono font-bold text-cyan-500 dark:text-cyan-400">
-                  {formatSunTime(sunHour)}
-                </span>
-              </div>
-
-              {/* Sun Hour Scrubber Slider */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                  <span>🌅 06:00</span>
-                  <span>☀️ 12:00</span>
-                  <span>🌇 18:00</span>
-                  <span>🌙 24:00</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="23.9"
-                  step="0.25"
-                  value={sunHour}
-                  onChange={e => setSunHour(parseFloat(e.target.value))}
-                  className="w-full accent-cyan-500 cursor-pointer"
-                />
-              </div>
-
-              {/* Real-time Sun Position Auto Sync */}
-              <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[11px] text-slate-600 dark:text-slate-400">Auto Sun Position Sync</span>
-                <button
-                  onClick={() => {
-                    setAutoSunSync(!autoSunSync);
-                    if (!autoSunSync) {
-                      const now = new Date();
-                      setSunHour(now.getHours() + now.getMinutes() / 60);
-                    }
-                  }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer border ${
-                    autoSunSync
-                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/40'
-                      : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'
-                  }`}
-                >
-                  {autoSunSync && <Check className="w-3 h-3" />}
-                  <span>{autoSunSync ? 'Real-Time Active' : 'Manual Slider'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Streak Pill */}
-        <div
-          onClick={() => setActiveTab('dashboard')}
-          title="Daily Study Streak"
-          className="flex items-center gap-1.5 glass-button text-amber-500 dark:text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:border-amber-500/40 transition shadow-sm"
-        >
-          <Flame className="w-4 h-4 text-amber-500 fill-amber-500 animate-pulse" />
-          <span>{user.streakDays}</span>
-          <span className="hidden sm:inline text-[11px] font-medium opacity-80">{t('streak')}</span>
-        </div>
-
-        {/* Offline Mode Pill */}
-        <button
-          onClick={toggleOfflineMode}
-          title={isOffline ? 'Offline Mode Active' : 'Online Sync Active'}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
-            isOffline
-              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30'
-              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
-          }`}
-        >
-          {isOffline ? <WifiOff className="w-3.5 h-3.5" /> : <Wifi className="w-3.5 h-3.5" />}
-          <span className="hidden md:inline">{isOffline ? t('offlineMode') : t('onlineMode')}</span>
-        </button>
-
-        {/* Quick Calendar Sync */}
-        <button
-          onClick={exportStudyCalendarIcs}
-          title={t('syncCalendar')}
-          className="p-2 rounded-xl glass-button text-slate-600 dark:text-slate-300 hover:text-cyan-500 transition cursor-pointer hidden sm:flex items-center justify-center"
-        >
-          <Calendar className="w-4 h-4 text-cyan-500" />
-        </button>
-
-        {/* Multi-language Selector */}
-        <div className="relative">
-          <select
-            value={language}
-            onChange={e => setLanguage(e.target.value as LanguageCode)}
-            aria-label="Language selector"
-            className="appearance-none glass-button text-slate-800 dark:text-slate-200 text-xs font-medium rounded-xl py-1.5 pl-7 pr-3 focus:outline-none cursor-pointer"
-          >
-            <option value="en">EN</option>
-            <option value="es">ES</option>
-            <option value="hi">HI</option>
-            <option value="bn">BN</option>
-            <option value="zh">ZH</option>
-            <option value="ja">JA</option>
-            <option value="de">DE</option>
-            <option value="fr">FR</option>
-          </select>
-          <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
-
-        {/* Dark/Light mode manual toggle */}
-        <button
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className="p-2 rounded-xl glass-button text-slate-700 dark:text-slate-300 hover:text-amber-400 transition cursor-pointer"
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
-        </button>
-
-        {/* User Auth Profile Trigger */}
-        {user.provider === 'guest' ? (
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:brightness-110 text-white font-semibold text-xs px-3.5 py-1.5 rounded-xl shadow cursor-pointer transition flex items-center gap-1.5"
-          >
-            <UserIcon className="w-3.5 h-3.5" />
-            <span>{t('signIn')}</span>
+            Welcome Home
           </button>
         ) : (
-          <div
+          <button
+            type="button"
             onClick={() => setActiveTab('profile')}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
           >
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-8 h-8 rounded-full ring-2 ring-indigo-500/50 object-cover group-hover:scale-105 transition"
-            />
-          </div>
+            Theme Studio
+          </button>
         )}
       </div>
     </header>

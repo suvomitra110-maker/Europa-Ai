@@ -25,7 +25,10 @@ export interface Badge {
   id: string;
   name: string;
   description: string;
-  category: 'streak' | 'voxel' | 'mastery' | 'community' | 'notes';
+  category: 'streak' | 'voxel' | 'mastery' | 'community' | 'notes' | 'quant';
+  studyPath?: 'ai' | 'quant' | 'general';
+  milestoneCriterion?: string;
+  xpReward?: number;
   icon: string;
   unlocked: boolean;
   unlockedAt?: string;
@@ -198,3 +201,38 @@ export interface StepWiseLearningItem {
   checklist: string[];
   completed?: boolean;
 }
+
+export interface QuantStrategyItem {
+  id: string;
+  name: string;
+  category: 'Statistical Arbitrage' | 'Market Microstructure & HFT' | 'AI / Deep RL Alpha' | 'Volatility & Options' | 'Macro & Factor Investing' | 'Sentiment & NLP Alpha';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  sharpeRatio: string;
+  typicalHorizon: string;
+  annualizedAlpha: string;
+  maxDrawdown: string;
+  mathematicalMethod: string;
+  formulaLatex: string;
+  coreMethodology: string;
+  realWorldApplication: string;
+  aiIntegration: string;
+  riskControls: string[];
+  executionSteps: string[];
+  xpReward: number;
+  completed?: boolean;
+}
+
+export interface GlobalQuantHub {
+  id: string;
+  city: string;
+  region: 'Americas' | 'EMEA' | 'APAC';
+  exchange: string;
+  status: 'OPEN' | 'AFTER-HOURS' | 'PRE-MARKET';
+  dailyQuantVolume: string;
+  aiOrderFlowShare: string;
+  dominantStrategy: string;
+  latencyBenchmark: string;
+  benchmarkIndex: string;
+  indexChange: string;
+}
+

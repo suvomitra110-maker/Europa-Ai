@@ -13,17 +13,22 @@ import {
   Settings,
   Flame,
   Trophy,
+  TrendingUp,
+  Gamepad2,
 } from 'lucide-react';
 import { useApp, ActiveTab } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, t, badges, user } = useApp();
+  const { activeTab, setActiveTab, t, badges, user, quantStrategies } = useApp();
 
   const unlockedCount = badges.filter(b => b.unlocked).length;
+  const completedQuantCount = quantStrategies.filter(q => q.completed).length;
 
   const navItems: { id: ActiveTab; labelKey: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'library', labelKey: 'library', icon: <Box className="w-4 h-4" />, badge: '3D Voxel' },
     { id: 'dashboard', labelKey: 'dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'quant-trading', labelKey: 'quantTrading', icon: <TrendingUp className="w-4 h-4 text-emerald-500" />, badge: `${completedQuantCount}/${quantStrategies.length}` },
+    { id: 'games', labelKey: 'aiGames', icon: <Gamepad2 className="w-4 h-4 text-rose-500" />, badge: '2D & 3D' },
     { id: 'analytics', labelKey: 'analytics', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'non-technical', labelKey: 'nonTechnical', icon: <Briefcase className="w-4 h-4" />, badge: 'No-Code' },
     { id: 'news', labelKey: 'aiNews', icon: <Newspaper className="w-4 h-4" /> },
@@ -32,7 +37,7 @@ export const Sidebar: React.FC = () => {
     { id: 'scan-transfer', labelKey: 'scanTransfer', icon: <QrCode className="w-4 h-4" />, badge: 'P2P' },
     { id: 'summarizer', labelKey: 'aiSummarizer', icon: <FileText className="w-4 h-4" /> },
     { id: 'collaborative-doc', labelKey: 'collaborativeDoc', icon: <Users className="w-4 h-4" /> },
-    { id: 'profile', labelKey: 'profile', icon: <User className="w-4 h-4" />, badge: `${unlockedCount}/12` },
+    { id: 'profile', labelKey: 'profile', icon: <User className="w-4 h-4" />, badge: `${unlockedCount}/${badges.length}` },
     { id: 'settings', labelKey: 'settings', icon: <Settings className="w-4 h-4" /> },
   ];
 

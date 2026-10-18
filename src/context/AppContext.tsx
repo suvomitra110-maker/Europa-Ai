@@ -10,6 +10,7 @@ import {
   LanguageCode,
   NpcInfo,
   PeerMessage,
+  QuantStrategyItem,
   SolarPhase,
   StepWiseLearningItem,
   StudyNote,
@@ -25,14 +26,29 @@ import {
   initialForumPosts,
   initialNotes,
   initialProfile,
+  initialQuantStrategies,
   initialStepWisePlans,
   npcList,
 } from '../data/initialData';
 import { translations } from '../i18n/translations';
+import {
+  AchievementMilestoneProgress,
+  applyXpGain,
+  DESIGN_THEMES,
+  DesignThemeConfig,
+  DesignThemeId,
+  evaluateAchievementMilestones,
+  resolveDesignTheme,
+  resolveSolarPreset,
+} from '../utils/progressionLogic';
 
 export type ActiveTab =
+  | 'home'
   | 'library'
   | 'dashboard'
+  | 'quant-trading'
+  | 'games'
+  | 'ai-guide'
   | 'analytics'
   | 'non-technical'
   | 'news'
@@ -44,6 +60,14 @@ export type ActiveTab =
   | 'profile'
   | 'settings';
 
+export interface GameStats {
+  highScore2D: number;
+  highScore3D: number;
+  gamesPlayed: number;
+  totalOrbsCollected: number;
+  totalGameXpEarned: number;
+}
+
 interface AppContextType {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
@@ -53,11 +77,17 @@ interface AppContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProfile>>;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  designTheme: DesignThemeId;
+  previewDesignTheme: DesignThemeId | null;
+  activeDesignThemeConfig: DesignThemeConfig;
+  setDesignTheme: (themeId: DesignThemeId) => void;
+  setPreviewDesignTheme: (themeId: DesignThemeId | null) => void;
   solarPhase: SolarPhase;
   sunHour: number;
   autoSunSync: boolean;
   setSunHour: (hour: number) => void;
   setAutoSunSync: (val: boolean) => void;
+  setSolarPreset: (preset: SolarPhase) => void;
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
   t: (key: string) => string;
@@ -68,8 +98,11 @@ interface AppContextType {
   syncOfflineCache: () => void;
   badges: Badge[];
   unlockBadge: (badgeId: string) => void;
+  achievementMilestones: AchievementMilestoneProgress[];
   modules: CourseModule[];
   completeLesson: (moduleId: string, lectureId: string) => void;
+  quantStrategies: QuantStrategyItem[];
+  toggleQuantStrategyComplete: (strategyId: string) => void;
   activeLecture: VideoLecture | null;
   setActiveLecture: (lecture: VideoLecture | null) => void;
   news: DailyNewsItem[];
@@ -106,6 +139,10 @@ interface AppContextType {
   quickCaptureNote: (text: string, userTitle?: string, manualCategory?: string) => StudyNote;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  gameStats: GameStats;
+  activeGameMode: '2d' | '3d';
+  setActiveGameMode: (mode: '2d' | '3d') => void;
+  recordGameRun: (mode: '2d' | '3d', score: number, orbsCollected: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -119,8 +156,38 @@ export const computeSolarPhase = (hour: number): SolarPhase => {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTabState] = useState<ActiveTab>('library');
-  const [navigationHistory, setNavigationHistory] = useState<ActiveTab[]>(['library']);
+  const [activeTab, setActiveTabState] = useState<ActiveTab>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as ActiveTab | null;
+      if (tabParam) return tabParam;
+      if (params.get('autostart') === '1') return 'games';
+    } catch {}
+    return 'home';
+  });
+  const [navigationHistory, setNavigationHistory] = useState<ActiveTab[]>(['home']);
+
+  const [activeGameMode, setActiveGameMode] = useState<'2d' | '3d'>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('game') === '2d') return '2d';
+    } catch {}
+    return '3d';
+  });
+
+  const [gameStats, setGameStats] = useState<GameStats>(() => {
+    try {
+      const saved = localStorage.getItem('europa_game_stats');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      highScore2D: 840,
+      highScore3D: 1280,
+      gamesPlayed: 3,
+      totalOrbsCollected: 28,
+      totalGameXpEarned: 420,
+    };
+  });
 
   // Solar Theme System
   const [autoSunSync, setAutoSunSync] = useState<boolean>(() => {
@@ -142,6 +209,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [solarPhase, setSolarPhase] = useState<SolarPhase>(() => computeSolarPhase(sunHour));
+
+  const [designTheme, setDesignThemeState] = useState<DesignThemeId>(() => {
+    try {
+      const saved = localStorage.getItem('europa_design_theme') as DesignThemeId | null;
+      if (saved && DESIGN_THEMES.some(t => t.id === saved)) return saved;
+    } catch {}
+    return 'europa-night';
+  });
+
+  const [previewDesignTheme, setPreviewDesignThemeState] = useState<DesignThemeId | null>(null);
+
+  const activeDesignThemeConfig = resolveDesignTheme(previewDesignTheme || designTheme);
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -181,7 +260,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [badges, setBadges] = useState<Badge[]>(() => {
     try {
       const saved = localStorage.getItem('europa_badges');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: Badge[] = JSON.parse(saved);
+        const savedMap = new Map(parsed.map(b => [b.id, b]));
+        return initialBadges.map(initB => {
+          const existing = savedMap.get(initB.id);
+          return existing ? { ...initB, unlocked: existing.unlocked, unlockedAt: existing.unlockedAt } : initB;
+        });
+      }
     } catch {}
     return initialBadges;
   });
@@ -276,6 +362,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return initialStepWisePlans;
   });
 
+  const [quantStrategies, setQuantStrategies] = useState<QuantStrategyItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('europa_quant_strategies');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return initialQuantStrategies;
+  });
+
   // Real-time solar clock sync
   useEffect(() => {
     if (!autoSunSync) return;
@@ -328,9 +422,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (navigationHistory.length > 0) {
       const previous = navigationHistory[0];
       setNavigationHistory(prev => prev.slice(1));
-      setActiveTabState(previous || 'library');
+      setActiveTabState(previous || 'home');
     } else {
-      setActiveTabState('library');
+      setActiveTabState('home');
     }
   };
 
@@ -345,6 +439,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('europa_sun_hour', h.toString());
       localStorage.setItem('europa_auto_sun', 'false');
     } catch {}
+  };
+
+  // Sync active design theme CSS variables to root document
+  useEffect(() => {
+    const cfg = activeDesignThemeConfig;
+    document.documentElement.setAttribute('data-design-theme', cfg.id);
+    document.documentElement.style.setProperty('--glass-bg', cfg.panelBg);
+    document.documentElement.style.setProperty('--glass-bg-card', cfg.cardBg);
+    document.documentElement.style.setProperty('--glass-border', cfg.borderColor);
+    document.documentElement.style.setProperty('--solar-accent', cfg.accentPrimary);
+  }, [activeDesignThemeConfig]);
+
+  const setDesignTheme = (themeId: DesignThemeId) => {
+    const cfg = resolveDesignTheme(themeId);
+    setPreviewDesignThemeState(null);
+    setDesignThemeState(cfg.id);
+    setAutoSunSync(false);
+    setSunHourState(cfg.sunHour);
+    setSolarPhase(cfg.solarPhase);
+    document.documentElement.setAttribute('data-solar', cfg.solarPhase);
+    setTheme(cfg.mode);
+    if (cfg.solarPhase === 'night') {
+      unlockBadge('badge-7');
+    }
+    try {
+      localStorage.setItem('europa_design_theme', cfg.id);
+      localStorage.setItem('europa_sun_hour', cfg.sunHour.toString());
+      localStorage.setItem('europa_auto_sun', 'false');
+    } catch {}
+    showToast(`Applied "${cfg.name}" theme across the app & website.`);
+  };
+
+  const setPreviewDesignTheme = (themeId: DesignThemeId | null) => {
+    setPreviewDesignThemeState(themeId);
+    const targetCfg = resolveDesignTheme(themeId || designTheme);
+    setAutoSunSync(false);
+    setSunHourState(targetCfg.sunHour);
+    setSolarPhase(targetCfg.solarPhase);
+    document.documentElement.setAttribute('data-solar', targetCfg.solarPhase);
+    setTheme(targetCfg.mode);
+  };
+
+  const setSolarPreset = (preset: SolarPhase) => {
+    const resolved = resolveSolarPreset(preset);
+    const mappedThemeId: DesignThemeId =
+      preset === 'dawn'
+        ? 'dawn-horizon'
+        : preset === 'day'
+        ? 'solar-zenith'
+        : preset === 'sunset'
+        ? 'golden-sunset'
+        : 'europa-night';
+    setPreviewDesignThemeState(null);
+    setDesignThemeState(mappedThemeId);
+    setAutoSunSync(false);
+    setSunHourState(resolved.sunHour);
+    setSolarPhase(resolved.solarPhase);
+    document.documentElement.setAttribute('data-solar', resolved.solarPhase);
+    setTheme(resolved.theme);
+    if (preset === 'night') {
+      unlockBadge('badge-7');
+    }
+    try {
+      localStorage.setItem('europa_design_theme', mappedThemeId);
+      localStorage.setItem('europa_sun_hour', resolved.sunHour.toString());
+      localStorage.setItem('europa_auto_sun', 'false');
+    } catch {}
+    showToast(`Solar Theme Preset switched to ${resolved.label}`);
   };
 
   // Sync state to local storage
@@ -396,6 +558,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, [stepWisePlans]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('europa_quant_strategies', JSON.stringify(quantStrategies));
+    } catch {}
+  }, [quantStrategies]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('europa_modules', JSON.stringify(modules));
+    } catch {}
+  }, [modules]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -446,20 +620,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBadges(prev =>
       prev.map(b => {
         if (b.id === badgeId && !b.unlocked) {
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 },
-          });
-          showToast(`🏆 Badge Unlocked: "${b.name}"! +150 XP awarded!`);
+          const reward = b.xpReward || 150;
+          try {
+            confetti({
+              particleCount: 80,
+              spread: 70,
+              origin: { y: 0.6 },
+            });
+          } catch {}
+          showToast(`🏆 Achievement Unlocked: "${b.name}"! +${reward} XP awarded!`);
           setUser(u => {
-            const nextXp = u.xp + 150;
-            const nextLevel = nextXp >= u.nextLevelXp ? u.level + 1 : u.level;
+            const updated = applyXpGain(
+              { xp: u.xp, level: u.level, nextLevelXp: u.nextLevelXp },
+              reward
+            );
             return {
               ...u,
-              xp: nextXp,
-              level: nextLevel,
-              nextLevelXp: nextLevel > u.level ? u.nextLevelXp + 800 : u.nextLevelXp,
+              xp: updated.xp,
+              level: updated.level,
+              nextLevelXp: updated.nextLevelXp,
             };
           });
           return { ...b, unlocked: true, unlockedAt: new Date().toISOString().split('T')[0] };
@@ -469,13 +648,109 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Compute live achievement milestones across AI and Quant study paths
+  const completedAiLecturesCount = modules.reduce(
+    (acc, mod) => acc + mod.lectures.filter(l => l.completed).length,
+    0
+  );
+  const totalAiLecturesCount = modules.reduce((acc, mod) => acc + mod.lectures.length, 0);
+  const completedAiStepsCount = stepWisePlans.filter(s => s.completed).length;
+  const completedQuantStrategiesCount = quantStrategies.filter(q => q.completed).length;
+  const totalQuantStrategiesCount = quantStrategies.length;
+
+  const achievementMilestones = evaluateAchievementMilestones({
+    completedAiLecturesCount,
+    totalAiLecturesCount,
+    completedAiStepsCount,
+    completedQuantStrategiesCount,
+    totalQuantStrategiesCount,
+    xp: user.xp,
+    level: user.level,
+    streakDays: user.streakDays,
+    notesCount: notes.length,
+    highScore2D: gameStats.highScore2D,
+    highScore3D: gameStats.highScore3D,
+    gamesPlayed: gameStats.gamesPlayed,
+  });
+
+  // Automatically grant achievement badges when AI, Quant, or Game milestones are reached
+  useEffect(() => {
+    achievementMilestones.forEach(m => {
+      if (m.shouldUnlock) {
+        const match = badges.find(b => b.id === m.badgeId);
+        if (match && !match.unlocked) {
+          unlockBadge(m.badgeId);
+        }
+      }
+    });
+  }, [
+    completedAiLecturesCount,
+    completedAiStepsCount,
+    completedQuantStrategiesCount,
+    user.level,
+    user.streakDays,
+    notes.length,
+    gameStats.highScore2D,
+    gameStats.highScore3D,
+    gameStats.gamesPlayed,
+  ]);
+
+  const recordGameRun = (mode: '2d' | '3d', score: number, orbsCollected: number) => {
+    const safeScore = Math.max(0, Math.round(score));
+    const safeOrbs = Math.max(0, Math.round(orbsCollected));
+    const xpEarned = Math.max(60, Math.min(350, Math.round(safeScore / 6) + safeOrbs * 8));
+
+    setGameStats(prev => {
+      const next: GameStats = {
+        highScore2D: mode === '2d' ? Math.max(prev.highScore2D, safeScore) : prev.highScore2D,
+        highScore3D: mode === '3d' ? Math.max(prev.highScore3D, safeScore) : prev.highScore3D,
+        gamesPlayed: prev.gamesPlayed + 1,
+        totalOrbsCollected: prev.totalOrbsCollected + safeOrbs,
+        totalGameXpEarned: prev.totalGameXpEarned + xpEarned,
+      };
+      try {
+        localStorage.setItem('europa_game_stats', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    setUser(u => {
+      const updated = applyXpGain(
+        { xp: u.xp, level: u.level, nextLevelXp: u.nextLevelXp },
+        xpEarned
+      );
+      return {
+        ...u,
+        xp: updated.xp,
+        level: updated.level,
+        nextLevelXp: updated.nextLevelXp,
+      };
+    });
+
+    if (mode === '2d' && safeScore >= 1000) {
+      unlockBadge('badge-17');
+    }
+    if (mode === '3d' && safeScore >= 1500) {
+      unlockBadge('badge-18');
+    }
+
+    showToast(
+      `${mode === '3d' ? '3D AI Roadster' : '2D Quant Collider'} run banked: ${safeScore.toLocaleString()} pts · +${xpEarned} XP!`
+    );
+  };
+
   const completeLesson = (moduleId: string, lectureId: string) => {
+    let newlyCompleted = false;
     setModules(prev =>
       prev.map(mod => {
         if (mod.id === moduleId) {
-          const updatedLectures = mod.lectures.map(lec =>
-            lec.id === lectureId ? { ...lec, completed: true } : lec
-          );
+          const updatedLectures = mod.lectures.map(lec => {
+            if (lec.id === lectureId) {
+              if (!lec.completed) newlyCompleted = true;
+              return { ...lec, completed: true };
+            }
+            return lec;
+          });
           const completedCount = updatedLectures.filter(l => l.completed).length;
           const pct = Math.round((completedCount / updatedLectures.length) * 100);
           return {
@@ -488,9 +763,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    recordStudySession(25);
+    recordStudySession(newlyCompleted ? 35 : 25);
     unlockBadge('badge-2');
-    showToast('Lesson checkpoint completed! +100 XP gained.');
+    showToast('AI Study Module lesson completed! +140 XP gained.');
+  };
+
+  const toggleQuantStrategyComplete = (strategyId: string) => {
+    setQuantStrategies(prev =>
+      prev.map(strat => {
+        if (strat.id === strategyId) {
+          const nextCompleted = !strat.completed;
+          if (nextCompleted) {
+            setUser(u => {
+              const updated = applyXpGain(
+                { xp: u.xp, level: u.level, nextLevelXp: u.nextLevelXp },
+                strat.xpReward
+              );
+              return {
+                ...u,
+                xp: updated.xp,
+                level: updated.level,
+                nextLevelXp: updated.nextLevelXp,
+              };
+            });
+            try {
+              confetti({ particleCount: 75, spread: 70, origin: { y: 0.65 } });
+            } catch {}
+            showToast(`Quant Strategy "${strat.name}" mastered! +${strat.xpReward} XP gained.`);
+          } else {
+            showToast(`Marked "${strat.name}" as in-progress.`);
+          }
+          return { ...strat, completed: nextCompleted };
+        }
+        return strat;
+      })
+    );
   };
 
   const recordStudySession = (durationMinutes: number) => {
@@ -498,16 +805,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const today = new Date().toISOString().split('T')[0];
       const isNewDay = prev.lastStudiedDate !== today;
       const newStreak = isNewDay ? prev.streakDays + 1 : prev.streakDays;
-      const nextXp = prev.xp + durationMinutes * 4;
-      const nextLevel = nextXp >= prev.nextLevelXp ? prev.level + 1 : prev.level;
+      const updated = applyXpGain(
+        { xp: prev.xp, level: prev.level, nextLevelXp: prev.nextLevelXp },
+        durationMinutes * 4
+      );
       if (newStreak >= 5) {
         unlockBadge('badge-3');
       }
       return {
         ...prev,
-        xp: nextXp,
-        level: nextLevel,
-        nextLevelXp: nextLevel > prev.level ? prev.nextLevelXp + 800 : prev.nextLevelXp,
+        xp: updated.xp,
+        level: updated.level,
+        nextLevelXp: updated.nextLevelXp,
         streakDays: newStreak,
         longestStreak: Math.max(prev.longestStreak, newStreak),
         lastStudiedDate: today,
@@ -903,11 +1212,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUser,
         theme,
         toggleTheme,
+        designTheme,
+        previewDesignTheme,
+        activeDesignThemeConfig,
+        setDesignTheme,
+        setPreviewDesignTheme,
         solarPhase,
         sunHour,
         autoSunSync,
         setSunHour,
         setAutoSunSync,
+        setSolarPreset,
         language,
         setLanguage,
         t,
@@ -918,8 +1233,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncOfflineCache,
         badges,
         unlockBadge,
+        achievementMilestones,
         modules,
         completeLesson,
+        quantStrategies,
+        toggleQuantStrategyComplete,
         activeLecture,
         setActiveLecture,
         news,
@@ -956,6 +1274,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         quickCaptureNote,
         toastMessage,
         showToast,
+        gameStats,
+        activeGameMode,
+        setActiveGameMode,
+        recordGameRun,
       }}
     >
       {children}

@@ -66,7 +66,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-500 relative selection:bg-cyan-500/30 overflow-x-hidden">
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-500 relative selection:bg-cyan-500/30 overflow-x-clip">
       {/* Dynamic Celestial Sun & Sky Background */}
       <SolarSkyBackground />
 
@@ -79,8 +79,8 @@ const MainAppContent: React.FC = () => {
       )}
 
       {/* Clean Full-Width Workspace (Widget-Free, Navigated via Top-Left Menu) */}
-      <div className="flex-1 flex overflow-hidden relative z-10 pb-16 md:pb-0">
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-transparent relative z-10">
+      <div className="flex-1 flex relative z-10 pb-16 md:pb-0">
+        <main className="flex-1 flex flex-col min-w-0 bg-transparent relative z-10">
           {renderActiveView()}
         </main>
       </div>

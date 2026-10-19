@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
-import { MobileNav } from './components/layout/MobileNav';
 import { SolarSkyBackground } from './components/layout/SolarSkyBackground';
 
 import { WelcomeHomeView } from './components/views/WelcomeHomeView';
@@ -70,7 +69,7 @@ const MainAppContent: React.FC = () => {
       {/* Dynamic Celestial Sun & Sky Background */}
       <SolarSkyBackground />
 
-      {/* Futuristic Earth Header with Top-Left All-Windows Dropdown Menu */}
+      {/* Clean Left-Upper-Side "Select Workspace Station" Dropdown Header */}
       {activeTab !== 'games' && (
         <Header
           externalMenuOpen={isTopLeftMenuOpen}
@@ -78,15 +77,12 @@ const MainAppContent: React.FC = () => {
         />
       )}
 
-      {/* Clean Full-Width Workspace (Widget-Free, Navigated via Top-Left Menu) */}
-      <div className="flex-1 flex relative z-10 pb-16 md:pb-0">
+      {/* Clean Full-Width Workspace */}
+      <div className="flex-1 flex relative z-10">
         <main className="flex-1 flex flex-col min-w-0 bg-transparent relative z-10">
           {renderActiveView()}
         </main>
       </div>
-
-      {/* Cross-Platform Mobile Bottom Navigation */}
-      <MobileNav />
 
       {/* Global Interactive Modals */}
       <NpcDialogModal />

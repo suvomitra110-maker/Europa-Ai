@@ -304,20 +304,12 @@ export const VoxelProgressSpireInspector: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Inspection Card */}
+      {/* Bottom Inspection Card (Zero Icons) */}
       <div className="relative z-10 p-5 flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 pointer-events-none">
         {selectedPillar ? (
           <div className="pointer-events-auto glass-card border border-cyan-500/40 p-4 rounded-3xl shadow-2xl max-w-md w-full space-y-2.5 text-slate-900 dark:text-white">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <img
-                  src={voxelPathIcons[resolveLearningPathIdFromCategory(selectedPillar.name)]?.dataUri}
-                  alt={`${selectedPillar.name} 3D Voxel Icon`}
-                  referrerPolicy="no-referrer"
-                  className="w-10 h-10 rounded-xl object-cover border border-white/20 shrink-0"
-                />
-                <span className="text-xs font-bold truncate">{selectedPillar.name}</span>
-              </div>
+              <span className="text-xs font-bold truncate">{selectedPillar.name}</span>
               <span className="text-xs font-mono font-black text-cyan-600 dark:text-cyan-400 shrink-0">
                 {selectedPillar.pct}% Complete
               </span>
@@ -343,31 +335,18 @@ export const VoxelProgressSpireInspector: React.FC = () => {
                 className="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1 shadow-sm shadow-cyan-500/20"
               >
                 <span>Continue Path</span>
-                <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </div>
         ) : (
-          <div className="pointer-events-auto glass-card border border-white/20 dark:border-white/10 px-4 py-2.5 rounded-2xl text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-2.5 flex-wrap">
-            <span>💡 Click any 3D voxel pillar or path icon:</span>
-            <div className="flex items-center gap-1.5">
-              {VOXEL_LEARNING_PATHS.map(spec => (
-                <img
-                  key={spec.id}
-                  src={voxelPathIcons[spec.id]?.dataUri}
-                  alt={spec.shortLabel}
-                  title={spec.title}
-                  referrerPolicy="no-referrer"
-                  className="w-6 h-6 rounded-lg object-cover border border-white/20"
-                />
-              ))}
-            </div>
+          <div className="pointer-events-auto glass-card border border-white/20 dark:border-white/10 px-4 py-2.5 rounded-2xl text-xs text-slate-600 dark:text-slate-300 font-medium">
+            <span>Click any 3D voxel pillar to inspect its study progress</span>
           </div>
         )}
 
         <div className="pointer-events-auto glass-panel border border-white/20 dark:border-white/10 px-3.5 py-2 rounded-2xl flex items-center gap-3 text-xs text-slate-700 dark:text-slate-300 font-medium">
           <span>Rotate: <strong>Left-drag</strong></span>
-          <span>•</span>
+          <span>·</span>
           <span>Zoom: <strong>Scroll</strong></span>
         </div>
       </div>

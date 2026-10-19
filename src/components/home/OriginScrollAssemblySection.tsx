@@ -911,7 +911,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                     exit={{ opacity: 0, y: 8 }}
                     className="absolute bottom-3 right-4 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-cyan-400/30 text-[11px] font-medium text-cyan-300 flex items-center gap-1.5 pointer-events-none"
                   >
-                    <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
                     <span>Scroll down to assemble parts</span>
                   </motion.div>
                 )}
@@ -926,7 +925,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                     htmlFor="assembly-scroll-scrubber"
                     className="font-semibold text-slate-200 flex items-center gap-1.5"
                   >
-                    <Sliders className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Interactive Scroll-Assembly Scrubber (Origin Math → AI → Robotics)</span>
                   </label>
                   <span className="font-mono font-bold text-cyan-300 tabular-nums">
@@ -1138,7 +1136,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                   @wix/sdk v1.15.0 · Scroll-Triggered Assembly Bridge
                 </div>
                 <h3 className="text-base font-bold text-white mt-0.5 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-cyan-400" />
                   <span>@wix Home Page Scroll-Assembly Studio</span>
                 </h3>
               </div>
@@ -1148,7 +1145,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                 onClick={handleSyncToWix}
                 className="px-3.5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
               >
-                <Sparkles className="w-3.5 h-3.5" />
                 <span>Sync Home Assembly to @wix</span>
               </button>
             </div>
@@ -1206,17 +1202,7 @@ export const OriginScrollAssemblySection: React.FC = () => {
                   onClick={handleCopyWixCode}
                   className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  {copiedWix ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy @wix Code</span>
-                    </>
-                  )}
+                  <span>{copiedWix ? 'Copied' : 'Copy @wix Code'}</span>
                 </button>
 
                 <button
@@ -1224,7 +1210,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                   onClick={() => setActiveTab('profile')}
                   className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-cyan-300 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <Code2 className="w-3.5 h-3.5" />
                   <span>Open Full @wix Builder</span>
                 </button>
               </div>

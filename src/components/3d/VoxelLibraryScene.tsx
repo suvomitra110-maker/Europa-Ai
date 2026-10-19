@@ -692,7 +692,7 @@ export const VoxelLibraryScene: React.FC = () => {
         </div>
       )}
 
-      {/* Collapsible Viewport-First Bottom Control Dock */}
+      {/* Collapsible Viewport-First Bottom Control Dock (Zero Icons) */}
       <div
         className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-[940px] transition-all duration-300 pointer-events-auto z-20 ${
           hudCollapsed ? 'translate-y-[calc(100%-38px)] opacity-90' : 'translate-y-0 opacity-100'
@@ -703,7 +703,7 @@ export const VoxelLibraryScene: React.FC = () => {
             onClick={() => setHudCollapsed(!hudCollapsed)}
             className="glass-panel text-slate-800 dark:text-slate-200 px-5 py-1.5 rounded-t-2xl border-t border-x border-white/20 dark:border-white/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg backdrop-blur-xl"
           >
-            <span>{hudCollapsed ? '▴ Show Voxel Waypoints' : '▾ Collapse Controls (Zen Mode)'}</span>
+            <span>{hudCollapsed ? 'Show Voxel Waypoints' : 'Collapse Controls (Zen Mode)'}</span>
           </button>
         </div>
 
@@ -711,41 +711,30 @@ export const VoxelLibraryScene: React.FC = () => {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase mr-1 font-bold">Waypoints:</span>
             {[
-              { id: 'overview', label: 'Overview', pathId: null as VoxelLearningPathId | null },
-              { id: 'progress', label: 'Progress Spire', highlight: true, pathId: 'foundational-math' as VoxelLearningPathId },
-              { id: 'transformer', label: 'Transformer Monolith', pathId: 'generative-ai' as VoxelLearningPathId },
-              { id: 'robotics', label: 'Robotics Bay', pathId: 'robotics' as VoxelLearningPathId },
-              { id: 'ethics', label: 'Ethics Citadel', pathId: 'ai-ethics' as VoxelLearningPathId },
-              { id: 'strategy', label: 'Strategy Pavilion', pathId: 'non-technical-ai' as VoxelLearningPathId },
-              { id: 'ada', label: 'Ada Lovelace', pathId: null as VoxelLearningPathId | null },
-              { id: 'alan', label: 'Alan Turing', pathId: null as VoxelLearningPathId | null },
-              { id: 'tensor', label: 'Tensor-9', pathId: null as VoxelLearningPathId | null },
-            ].map(wp => {
-              const iconUri = wp.pathId ? voxelPathIcons[wp.pathId]?.dataUri : null;
-              return (
-                <button
-                  key={wp.id}
-                  onClick={() => setCameraPreset(wp.id as any)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-                    cameraPreset === wp.id
-                      ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md'
-                      : wp.highlight
-                      ? 'bg-indigo-950/80 text-cyan-300 border border-indigo-700/60 hover:bg-indigo-900'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  {iconUri && (
-                    <img
-                      src={iconUri}
-                      alt={`${wp.label} voxel icon`}
-                      referrerPolicy="no-referrer"
-                      className="w-4 h-4 rounded object-cover border border-white/20"
-                    />
-                  )}
-                  <span>{wp.label}</span>
-                </button>
-              );
-            })}
+              { id: 'overview', label: 'Overview' },
+              { id: 'progress', label: 'Progress Spire', highlight: true },
+              { id: 'transformer', label: 'Transformer Monolith' },
+              { id: 'robotics', label: 'Robotics Bay' },
+              { id: 'ethics', label: 'Ethics Citadel' },
+              { id: 'strategy', label: 'Strategy Pavilion' },
+              { id: 'ada', label: 'Ada Lovelace' },
+              { id: 'alan', label: 'Alan Turing' },
+              { id: 'tensor', label: 'Tensor-9' },
+            ].map(wp => (
+              <button
+                key={wp.id}
+                onClick={() => setCameraPreset(wp.id as any)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                  cameraPreset === wp.id
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md'
+                    : wp.highlight
+                    ? 'bg-indigo-950/80 text-cyan-300 border border-indigo-700/60 hover:bg-indigo-900'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }`}
+              >
+                <span>{wp.label}</span>
+              </button>
+            ))}
           </div>
 
           <div className="flex items-center gap-2">
@@ -757,7 +746,7 @@ export const VoxelLibraryScene: React.FC = () => {
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
               }`}
             >
-              <span>{ambientAudioOn ? '🔊 Lo-Fi: On' : '🔈 Lo-Fi: Off'}</span>
+              <span>{ambientAudioOn ? 'Lo-Fi: On' : 'Lo-Fi: Off'}</span>
             </button>
             <button
               onClick={() => {

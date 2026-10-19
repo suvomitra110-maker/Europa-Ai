@@ -4,6 +4,7 @@ import {
   ALL_WINDOW_MENU_OPTIONS,
   filterWindowMenuOptions,
   FUTURISTIC_EARTH_HEADER_DATA_URI,
+  HUMAN_ROBOT_HAND_TOUCH_DATA_URI,
 } from './futuristicEarthAsset.ts';
 
 test('ALL_WINDOW_MENU_OPTIONS contains all 15 application windows including home', () => {
@@ -42,3 +43,13 @@ test('FUTURISTIC_EARTH_HEADER_DATA_URI is a valid encoded SVG data URI for img s
   assert.ok(FUTURISTIC_EARTH_HEADER_DATA_URI.startsWith('data:image/svg+xml;utf8,'));
   assert.ok(FUTURISTIC_EARTH_HEADER_DATA_URI.length > 1000);
 });
+
+test('HUMAN_ROBOT_HAND_TOUCH_DATA_URI is a valid encoded SVG data URI of human hand touching robot hand', () => {
+  assert.ok(HUMAN_ROBOT_HAND_TOUCH_DATA_URI.startsWith('data:image/svg+xml;utf8,'));
+  assert.ok(HUMAN_ROBOT_HAND_TOUCH_DATA_URI.length > 1500);
+  const decoded = decodeURIComponent(HUMAN_ROBOT_HAND_TOUCH_DATA_URI);
+  assert.ok(decoded.includes('human-hand-assembly'));
+  assert.ok(decoded.includes('robot-hand-assembly'));
+  assert.ok(decoded.includes('symbiosis-contact-spark'));
+});
+

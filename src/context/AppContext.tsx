@@ -41,6 +41,15 @@ import {
   resolveDesignTheme,
   resolveSolarPreset,
 } from '../utils/progressionLogic';
+import {
+  createInitialVoxelPathIconMap,
+  synthesizeVoxelPathIconDataUri,
+  VOXEL_LEARNING_PATHS,
+  VoxelIconStylePreset,
+  VoxelLearningPathId,
+  VoxelPathIconRecord,
+  buildVoxelIconPrompt,
+} from '../utils/voxelPathIcons';
 
 export type ActiveTab =
   | 'home'
@@ -143,6 +152,16 @@ interface AppContextType {
   activeGameMode: '2d' | '3d';
   setActiveGameMode: (mode: '2d' | '3d') => void;
   recordGameRun: (mode: '2d' | '3d', score: number, orbsCollected: number) => void;
+  voxelPathIcons: Record<VoxelLearningPathId, VoxelPathIconRecord>;
+  generateVoxelPathIcon: (options: {
+    pathId: VoxelLearningPathId;
+    stylePreset: VoxelIconStylePreset;
+    customNotes?: string;
+    seed?: number;
+    customAccentHex?: string;
+  }) => Promise<VoxelPathIconRecord>;
+  regenerateAllVoxelPathIcons: (stylePreset: VoxelIconStylePreset) => Promise<void>;
+  resetVoxelPathIcons: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -370,6 +389,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return initialQuantStrategies;
   });
 
+  const [voxelPathIcons, setVoxelPathIcons] = useState<Record<VoxelLearningPathId, VoxelPathIconRecord>>(() => {
+    const defaults = createInitialVoxelPathIconMap();
+    try {
+      const saved = localStorage.getItem('europa_voxel_path_icons');
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<VoxelLearningPathId, VoxelPathIconRecord>;
+        const merged = { ...defaults };
+        for (const key of Object.keys(defaults) as VoxelLearningPathId[]) {
+          const item = parsed[key];
+          if (item && item.dataUri && !item.dataUri.includes('%26amp%3B') && item.dataUri.includes('%20%26%20')) {
+            // Re-synthesize if a legacy unescaped '&' was stored
+            merged[key] = {
+              ...item,
+              dataUri: synthesizeVoxelPathIconDataUri({
+                pathId: key,
+                stylePreset: item.stylePreset,
+                seed: item.seed,
+              }),
+            };
+          } else if (item && item.dataUri) {
+            merged[key] = item;
+          }
+        }
+        return merged;
+      }
+    } catch {}
+    return defaults;
+  });
+
   // Real-time solar clock sync
   useEffect(() => {
     if (!autoSunSync) return;
@@ -569,6 +617,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('europa_modules', JSON.stringify(modules));
     } catch {}
   }, [modules]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('europa_voxel_path_icons', JSON.stringify(voxelPathIcons));
+    } catch {}
+  }, [voxelPathIcons]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1201,6 +1255,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Downloaded Europa_AI_Study_Schedule.ics! Compatible with Google Calendar, Apple & Outlook.');
   };
 
+  const generateVoxelPathIcon = async (options: {
+    pathId: VoxelLearningPathId;
+    stylePreset: VoxelIconStylePreset;
+    customNotes?: string;
+    seed?: number;
+    customAccentHex?: string;
+  }): Promise<VoxelPathIconRecord> => {
+    const nextSeed = options.seed ?? Math.floor(Math.random() * 900) + 100;
+    const spec = VOXEL_LEARNING_PATHS.find(p => p.id === options.pathId) || VOXEL_LEARNING_PATHS[0];
+
+    try {
+      const res = await fetch('/api/ai/generate-voxel-icon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pathId: options.pathId,
+          stylePreset: options.stylePreset,
+          customNotes: options.customNotes || '',
+          seed: nextSeed,
+          customAccentHex: options.customAccentHex,
+        }),
+      });
+      if (res.ok) {
+        const record: VoxelPathIconRecord = await res.json();
+        setVoxelPathIcons(prev => ({
+          ...prev,
+          [options.pathId]: record,
+        }));
+        showToast(`Generated new 3D Voxel Icon for "${spec.shortLabel}"!`);
+        return record;
+      }
+    } catch {}
+
+    const fallbackRecord: VoxelPathIconRecord = {
+      pathId: options.pathId,
+      stylePreset: options.stylePreset,
+      prompt: buildVoxelIconPrompt(options.pathId, options.stylePreset, options.customNotes),
+      seed: nextSeed,
+      dataUri: synthesizeVoxelPathIconDataUri({
+        pathId: options.pathId,
+        stylePreset: options.stylePreset,
+        seed: nextSeed,
+        customAccentHex: options.customAccentHex,
+      }),
+      source: 'procedural-voxel-tool',
+      updatedAt: new Date().toISOString().split('T')[0],
+    };
+
+    setVoxelPathIcons(prev => ({
+      ...prev,
+      [options.pathId]: fallbackRecord,
+    }));
+    showToast(`Synthesized 3D Voxel Icon for "${spec.shortLabel}"!`);
+    return fallbackRecord;
+  };
+
+  const regenerateAllVoxelPathIcons = async (stylePreset: VoxelIconStylePreset) => {
+    const baseSeed = Math.floor(Math.random() * 500) + 50;
+    const nextMap = { ...voxelPathIcons };
+    for (let i = 0; i < VOXEL_LEARNING_PATHS.length; i++) {
+      const spec = VOXEL_LEARNING_PATHS[i];
+      const seed = baseSeed + i * 17;
+      nextMap[spec.id] = {
+        pathId: spec.id,
+        stylePreset,
+        prompt: buildVoxelIconPrompt(spec.id, stylePreset),
+        seed,
+        dataUri: synthesizeVoxelPathIconDataUri({
+          pathId: spec.id,
+          stylePreset,
+          seed,
+        }),
+        source: 'procedural-voxel-tool',
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+    }
+    setVoxelPathIcons(nextMap);
+    showToast(`Generated all 5 3D Voxel Learning Path icons (${stylePreset})!`);
+  };
+
+  const resetVoxelPathIcons = () => {
+    const defaults = createInitialVoxelPathIconMap();
+    setVoxelPathIcons(defaults);
+    showToast('Reset 3D Voxel Learning Path icons to default studio cubes.');
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1278,6 +1418,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeGameMode,
         setActiveGameMode,
         recordGameRun,
+        voxelPathIcons,
+        generateVoxelPathIcon,
+        regenerateAllVoxelPathIcons,
+        resetVoxelPathIcons,
       }}
     >
       {children}

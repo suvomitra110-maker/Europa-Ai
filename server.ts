@@ -244,6 +244,86 @@ Provide a natural, helpful, conversational answer in 2-4 engaging paragraphs. If
   }
 });
 
+// -------------------------------------------------------------
+// POST /api/ai/generate-voxel-icon
+// Generates a 1:1 3D voxel learning path icon image via Gemini
+// Image Generation (gemini-3.1-flash-lite-image) with procedural
+// isometric 3D voxel fallback when offline or quota-limited.
+// -------------------------------------------------------------
+app.post('/api/ai/generate-voxel-icon', async (req, res) => {
+  try {
+    const {
+      pathId = 'generative-ai',
+      stylePreset = 'isometric-cube',
+      customNotes = '',
+      seed = 1,
+      customAccentHex,
+    } = req.body || {};
+
+    const {
+      buildVoxelIconPrompt,
+      synthesizeVoxelPathIconDataUri,
+    } = await import('./src/utils/voxelPathIcons.ts');
+
+    const prompt = buildVoxelIconPrompt(pathId, stylePreset, customNotes);
+
+    if (ai) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite-image',
+          contents: {
+            parts: [{ text: prompt }],
+          },
+          config: {
+            imageConfig: {
+              aspectRatio: '1:1',
+            },
+          },
+        });
+
+        const parts = response.candidates?.[0]?.content?.parts || [];
+        for (const part of parts) {
+          if (part.inlineData?.data) {
+            const mimeType = part.inlineData.mimeType || 'image/png';
+            const dataUri = `data:${mimeType};base64,${part.inlineData.data}`;
+            return res.json({
+              pathId,
+              stylePreset,
+              prompt,
+              seed,
+              dataUri,
+              source: 'gemini-image-tool',
+              updatedAt: new Date().toISOString().split('T')[0],
+            });
+          }
+        }
+      } catch (imgErr: any) {
+        console.warn('Gemini image generation fallback to procedural 3D voxel icon:', imgErr?.message);
+      }
+    }
+
+    const fallbackDataUri = synthesizeVoxelPathIconDataUri({
+      pathId,
+      stylePreset,
+      seed: Number(seed) || 1,
+      customAccentHex,
+    });
+
+    return res.json({
+      pathId,
+      stylePreset,
+      prompt,
+      seed: Number(seed) || 1,
+      dataUri: fallbackDataUri,
+      source: 'procedural-voxel-tool',
+      updatedAt: new Date().toISOString().split('T')[0],
+    });
+  } catch (err: any) {
+    console.error('Error in /api/ai/generate-voxel-icon:', err);
+    res.status(500).json({ error: 'Failed to generate voxel path icon: ' + err.message });
+  }
+});
+
 // In production, serve static dist; in development, mount Vite middleware
 const isProd = process.env.NODE_ENV === 'production';
 

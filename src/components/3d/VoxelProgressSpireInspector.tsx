@@ -4,10 +4,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Layers, Sparkles, CheckCircle, ArrowRight, TrendingUp, Award, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { resolveLearningPathIdFromCategory, VOXEL_LEARNING_PATHS } from '../../utils/voxelPathIcons';
 
 export const VoxelProgressSpireInspector: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const { modules, user, setActiveLecture, setActiveTab } = useApp();
+  const { modules, user, setActiveLecture, setActiveTab, voxelPathIcons } = useApp();
 
   const [selectedPillar, setSelectedPillar] = useState<any>(null);
   const [hoveredVoxelInfo, setHoveredVoxelInfo] = useState<string | null>(null);
@@ -306,10 +307,20 @@ export const VoxelProgressSpireInspector: React.FC = () => {
       {/* Bottom Inspection Card */}
       <div className="relative z-10 p-5 flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 pointer-events-none">
         {selectedPillar ? (
-          <div className="pointer-events-auto glass-card border border-cyan-500/40 p-4 rounded-3xl shadow-2xl max-w-md w-full space-y-2 text-slate-900 dark:text-white">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold">{selectedPillar.name}</span>
-              <span className="text-xs font-mono font-black text-cyan-600 dark:text-cyan-400">{selectedPillar.pct}% Complete</span>
+          <div className="pointer-events-auto glass-card border border-cyan-500/40 p-4 rounded-3xl shadow-2xl max-w-md w-full space-y-2.5 text-slate-900 dark:text-white">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={voxelPathIcons[resolveLearningPathIdFromCategory(selectedPillar.name)]?.dataUri}
+                  alt={`${selectedPillar.name} 3D Voxel Icon`}
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-10 rounded-xl object-cover border border-white/20 shrink-0"
+                />
+                <span className="text-xs font-bold truncate">{selectedPillar.name}</span>
+              </div>
+              <span className="text-xs font-mono font-black text-cyan-600 dark:text-cyan-400 shrink-0">
+                {selectedPillar.pct}% Complete
+              </span>
             </div>
             <div className="w-full bg-black/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
               <div
@@ -337,8 +348,20 @@ export const VoxelProgressSpireInspector: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="pointer-events-auto glass-card border border-white/20 dark:border-white/10 px-4 py-2.5 rounded-2xl text-xs text-slate-600 dark:text-slate-300 font-medium">
-            💡 Click any voxel pillar to inspect learning milestones and launch lessons.
+          <div className="pointer-events-auto glass-card border border-white/20 dark:border-white/10 px-4 py-2.5 rounded-2xl text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-2.5 flex-wrap">
+            <span>💡 Click any 3D voxel pillar or path icon:</span>
+            <div className="flex items-center gap-1.5">
+              {VOXEL_LEARNING_PATHS.map(spec => (
+                <img
+                  key={spec.id}
+                  src={voxelPathIcons[spec.id]?.dataUri}
+                  alt={spec.shortLabel}
+                  title={spec.title}
+                  referrerPolicy="no-referrer"
+                  className="w-6 h-6 rounded-lg object-cover border border-white/20"
+                />
+              ))}
+            </div>
           </div>
         )}
 

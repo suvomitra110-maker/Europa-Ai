@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { useApp } from '../../context/AppContext';
 import { npcList } from '../../data/initialData';
 import { NpcInfo } from '../../types';
+import { VOXEL_LEARNING_PATHS, VoxelLearningPathId } from '../../utils/voxelPathIcons';
 
 // Pre-allocated reusable math vectors
 const _raycaster = new THREE.Raycaster();
@@ -14,7 +15,7 @@ const _lookTarget = new THREE.Vector3(0, 1.2, 0);
 
 export const VoxelLibraryScene: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const { setActiveNpc, unlockBadge, setActiveTab, showToast, modules, solarPhase, sunHour } = useApp();
+  const { setActiveNpc, unlockBadge, setActiveTab, showToast, modules, solarPhase, sunHour, voxelPathIcons } = useApp();
 
   const [hudCollapsed, setHudCollapsed] = useState(false);
   const [ambientAudioOn, setAmbientAudioOn] = useState(false);
@@ -710,30 +711,41 @@ export const VoxelLibraryScene: React.FC = () => {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase mr-1 font-bold">Waypoints:</span>
             {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'progress', label: 'Progress Spire', highlight: true },
-              { id: 'transformer', label: 'Transformer Monolith' },
-              { id: 'robotics', label: 'Robotics Bay' },
-              { id: 'ethics', label: 'Ethics Citadel' },
-              { id: 'strategy', label: 'Strategy Pavilion' },
-              { id: 'ada', label: 'Ada Lovelace' },
-              { id: 'alan', label: 'Alan Turing' },
-              { id: 'tensor', label: 'Tensor-9' },
-            ].map(wp => (
-              <button
-                key={wp.id}
-                onClick={() => setCameraPreset(wp.id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                  cameraPreset === wp.id
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md'
-                    : wp.highlight
-                    ? 'bg-indigo-950/80 text-cyan-300 border border-indigo-700/60 hover:bg-indigo-900'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                }`}
-              >
-                {wp.label}
-              </button>
-            ))}
+              { id: 'overview', label: 'Overview', pathId: null as VoxelLearningPathId | null },
+              { id: 'progress', label: 'Progress Spire', highlight: true, pathId: 'foundational-math' as VoxelLearningPathId },
+              { id: 'transformer', label: 'Transformer Monolith', pathId: 'generative-ai' as VoxelLearningPathId },
+              { id: 'robotics', label: 'Robotics Bay', pathId: 'robotics' as VoxelLearningPathId },
+              { id: 'ethics', label: 'Ethics Citadel', pathId: 'ai-ethics' as VoxelLearningPathId },
+              { id: 'strategy', label: 'Strategy Pavilion', pathId: 'non-technical-ai' as VoxelLearningPathId },
+              { id: 'ada', label: 'Ada Lovelace', pathId: null as VoxelLearningPathId | null },
+              { id: 'alan', label: 'Alan Turing', pathId: null as VoxelLearningPathId | null },
+              { id: 'tensor', label: 'Tensor-9', pathId: null as VoxelLearningPathId | null },
+            ].map(wp => {
+              const iconUri = wp.pathId ? voxelPathIcons[wp.pathId]?.dataUri : null;
+              return (
+                <button
+                  key={wp.id}
+                  onClick={() => setCameraPreset(wp.id as any)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                    cameraPreset === wp.id
+                      ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-md'
+                      : wp.highlight
+                      ? 'bg-indigo-950/80 text-cyan-300 border border-indigo-700/60 hover:bg-indigo-900'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  {iconUri && (
+                    <img
+                      src={iconUri}
+                      alt={`${wp.label} voxel icon`}
+                      referrerPolicy="no-referrer"
+                      className="w-4 h-4 rounded object-cover border border-white/20"
+                    />
+                  )}
+                  <span>{wp.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2">

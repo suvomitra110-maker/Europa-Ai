@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
-import { Box, Play, Clock, User, Sparkles, BookOpen, Search, CheckCircle, TrendingUp, Layers, GraduationCap } from 'lucide-react';
+import {
+  Box,
+  Play,
+  Clock,
+  User,
+  Sparkles,
+  Search,
+  CheckCircle,
+  Layers,
+  GraduationCap,
+  Wand2,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { VoxelLibraryScene } from '../3d/VoxelLibraryScene';
 import { VoxelProgressSpireInspector } from '../3d/VoxelProgressSpireInspector';
 import { StepWiseVideoLearning } from '../library/StepWiseVideoLearning';
+import { VoxelPathIconStudio } from '../library/VoxelPathIconStudio';
 import { PageBackHeader } from '../layout/PageBackHeader';
 import { videoLectures } from '../../data/initialData';
-import { VideoLecture } from '../../types';
+import { resolveLearningPathIdFromCategory } from '../../utils/voxelPathIcons';
 
 export const LibraryView: React.FC = () => {
-  const { t, setActiveLecture } = useApp();
+  const { t, setActiveLecture, voxelPathIcons } = useApp();
   const [viewMode, setViewMode] = useState<'step-wise' | '3d-campus' | '3d-progress' | 'catalog'>('step-wise');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -21,7 +33,7 @@ export const LibraryView: React.FC = () => {
     const matchSearch =
       lec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lec.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lec.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      lec.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchCat && matchSearch;
   });
 
@@ -30,7 +42,7 @@ export const LibraryView: React.FC = () => {
       {/* Universal Page Back Header & Minimalist Glass Navigation */}
       <PageBackHeader
         title="AI Study Library & Video Academy"
-        subtitle="Explore step-wise video learning pathways (including non-technical tracks), 3D voxel campus, and progress spires."
+        subtitle="Explore step-wise video learning pathways, 3D voxel campus, progress spires, and custom 3D voxel path icons."
         badge="Curriculum Engine"
       >
         {/* View Toggle Tabs */}
@@ -85,6 +97,17 @@ export const LibraryView: React.FC = () => {
         </div>
       </PageBackHeader>
 
+      {/* 3D Voxel Learning Path Icons & Image Generation Studio */}
+      <div className="max-w-7xl mx-auto w-full">
+        <VoxelPathIconStudio
+          selectedCategory={selectedCategory}
+          onSelectCategory={cat => {
+            setSelectedCategory(cat);
+          }}
+          onOpen3DCampus={() => setViewMode('3d-campus')}
+        />
+      </div>
+
       {/* Main Viewport Content */}
       <div className="flex-1 min-h-0">
         {viewMode === 'step-wise' ? (
@@ -113,78 +136,110 @@ export const LibraryView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-                {categories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer border ${
-                      selectedCategory === cat
-                        ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border-cyan-500/40 shadow-sm'
-                        : 'glass-button text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {cat === 'all' ? t('filterAll') : cat}
-                  </button>
-                ))}
+                {categories.map(cat => {
+                  const pathId = cat === 'all' ? null : resolveLearningPathIdFromCategory(cat);
+                  const pathIconUri = pathId ? voxelPathIcons[pathId]?.dataUri : null;
+
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer border flex items-center gap-1.5 ${
+                        selectedCategory === cat
+                          ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border-cyan-500/40 shadow-sm'
+                          : 'glass-button text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {pathIconUri && (
+                        <img
+                          src={pathIconUri}
+                          alt={`${cat} voxel icon`}
+                          referrerPolicy="no-referrer"
+                          className="w-4 h-4 rounded object-cover"
+                        />
+                      )}
+                      <span>{cat === 'all' ? t('filterAll') : cat}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Video Lecture Grid with Transparent Glass Cards */}
+            {/* Video Lecture Grid with Transparent Glass Cards & 3D Voxel Path Icons */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredLectures.map(lecture => (
-                <div
-                  key={lecture.id}
-                  className="glass-card rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300 shadow-xl flex flex-col justify-between group border border-white/20 dark:border-white/10"
-                >
-                  <div>
-                    <div className="relative aspect-video overflow-hidden bg-slate-950">
-                      <img
-                        src={lecture.thumbnail}
-                        alt={lecture.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                      <span className="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white font-mono text-[11px] px-2 py-0.5 rounded-lg flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-cyan-400" />
-                        {lecture.duration}
-                      </span>
-                      <span className="absolute top-2.5 left-2.5 text-[10px] font-mono uppercase bg-indigo-950/80 text-indigo-300 border border-indigo-700/50 px-2.5 py-0.5 rounded-full font-semibold backdrop-blur-md">
-                        {lecture.category}
-                      </span>
-                      {lecture.completed && (
-                        <span className="absolute top-2.5 right-2.5 bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 backdrop-blur-md">
-                          <CheckCircle className="w-3 h-3 text-emerald-400" />
-                          Completed
+              {filteredLectures.map(lecture => {
+                const pathId = resolveLearningPathIdFromCategory(lecture.category);
+                const pathIcon = voxelPathIcons[pathId];
+
+                return (
+                  <div
+                    key={lecture.id}
+                    className="glass-card rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300 shadow-xl flex flex-col justify-between group border border-white/20 dark:border-white/10"
+                  >
+                    <div>
+                      <div className="relative aspect-video overflow-hidden bg-slate-950">
+                        <img
+                          src={lecture.thumbnail}
+                          alt={lecture.title}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                        <span className="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white font-mono text-[11px] px-2 py-0.5 rounded-lg flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-cyan-400" />
+                          {lecture.duration}
                         </span>
-                      )}
-                    </div>
 
-                    <div className="p-5 space-y-2.5">
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition leading-snug line-clamp-2">
-                        {lecture.title}
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                        {lecture.summary}
-                      </p>
+                        {/* Differentiated 3D Voxel Path Icon + Category Badge */}
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-slate-950/85 text-indigo-200 border border-indigo-500/40 pr-2.5 pl-1 py-0.5 rounded-xl backdrop-blur-md shadow-lg">
+                          {pathIcon && (
+                            <img
+                              src={pathIcon.dataUri}
+                              alt={`${lecture.category} 3D Voxel Path Icon`}
+                              referrerPolicy="no-referrer"
+                              className="w-6 h-6 rounded-lg object-cover border border-white/20"
+                            />
+                          )}
+                          <span className="text-[10px] font-mono uppercase font-semibold">
+                            {lecture.category}
+                          </span>
+                        </div>
 
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1 font-medium">
-                        <User className="w-3.5 h-3.5 text-cyan-500" />
-                        <span>{lecture.instructor}</span>
+                        {lecture.completed && (
+                          <span className="absolute top-2.5 right-2.5 bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 backdrop-blur-md">
+                            <CheckCircle className="w-3 h-3 text-emerald-400" />
+                            Completed
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-5 space-y-2.5">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition leading-snug line-clamp-2">
+                          {lecture.title}
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {lecture.summary}
+                        </p>
+
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pt-1 font-medium">
+                          <User className="w-3.5 h-3.5 text-cyan-500" />
+                          <span>{lecture.instructor}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-5 pt-0">
-                    <button
-                      onClick={() => setActiveLecture(lecture)}
-                      className="w-full py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-white" />
-                      <span>{t('watchLecture')}</span>
-                    </button>
+                    <div className="p-5 pt-0">
+                      <button
+                        onClick={() => setActiveLecture(lecture)}
+                        className="w-full py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>{t('watchLecture')}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

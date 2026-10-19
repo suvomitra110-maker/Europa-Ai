@@ -24,6 +24,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { videoLectures } from '../../data/initialData';
 import { StepWiseLearningItem, VideoLecture } from '../../types';
+import { resolveLearningPathIdFromCategory } from '../../utils/voxelPathIcons';
 
 export const StepWiseVideoLearning: React.FC = () => {
   const {
@@ -36,6 +37,7 @@ export const StepWiseVideoLearning: React.FC = () => {
     setActiveNpc,
     showToast,
     user,
+    voxelPathIcons,
   } = useApp();
 
   const [expandedQuizStepId, setExpandedQuizStepId] = useState<string | null>(null);
@@ -340,9 +342,17 @@ export const StepWiseVideoLearning: React.FC = () => {
                     : 'border-white/20 dark:border-white/10'
                 }`}
               >
-                {/* Step Header Badges */}
+                {/* Step Header Badges with 3D Voxel Learning Path Icon */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {lecture && voxelPathIcons[resolveLearningPathIdFromCategory(lecture.category)] && (
+                      <img
+                        src={voxelPathIcons[resolveLearningPathIdFromCategory(lecture.category)].dataUri}
+                        alt={`${lecture.category} 3D Voxel Path Icon`}
+                        referrerPolicy="no-referrer"
+                        className="w-7 h-7 rounded-lg object-cover border border-cyan-500/30 shadow-sm"
+                      />
+                    )}
                     <span className="text-xs font-mono uppercase bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-slate-200 px-2.5 py-0.5 rounded-lg font-bold">
                       Step {step.stepNumber}
                     </span>
@@ -397,6 +407,7 @@ export const StepWiseVideoLearning: React.FC = () => {
                       <img
                         src={lecture.thumbnail}
                         alt={lecture.title}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">

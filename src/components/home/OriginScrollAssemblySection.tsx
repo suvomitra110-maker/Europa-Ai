@@ -6,18 +6,6 @@ import {
   useScroll,
   useSpring,
 } from 'motion/react';
-import {
-  ArrowDown,
-  Check,
-  Code2,
-  Copy,
-  Layers,
-  Pause,
-  Play,
-  RotateCcw,
-  Sliders,
-  Sparkles,
-} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   ORIGIN_ASSEMBLY_STAGES,
@@ -283,15 +271,9 @@ export const OriginScrollAssemblySection: React.FC = () => {
                   className="px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 >
                   {isAutoPlaying ? (
-                    <>
-                      <Pause className="w-3.5 h-3.5" />
-                      <span>Pause Assembly</span>
-                    </>
+                    <span>Pause Assembly</span>
                   ) : (
-                    <>
-                      <Play className="w-3.5 h-3.5" />
-                      <span>Auto-Assemble</span>
-                    </>
+                    <span>Auto-Assemble</span>
                   )}
                 </button>
 
@@ -305,7 +287,6 @@ export const OriginScrollAssemblySection: React.FC = () => {
                   aria-label="Reset Exploded View"
                   className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-medium transition cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>Explode</span>
                 </button>
               </div>
